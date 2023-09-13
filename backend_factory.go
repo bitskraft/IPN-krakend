@@ -3,8 +3,8 @@ package krakend
 import (
 	"context"
 	"fmt"
-
 	amqp "github.com/krakendio/krakend-amqp/v2"
+	"github.com/krakendio/krakend-ce/v2/ext/rediscache"
 	cel "github.com/krakendio/krakend-cel/v2"
 	cb "github.com/krakendio/krakend-circuitbreaker/v2/gobreaker/proxy"
 	httpcache "github.com/krakendio/krakend-httpcache/v2"
@@ -43,7 +43,9 @@ func NewBackendFactory(logger logging.Logger, metricCollector *metrics.Metrics) 
 func NewBackendFactoryWithContext(ctx context.Context, logger logging.Logger, metricCollector *metrics.Metrics) proxy.BackendFactory {
 	requestExecutorFactory := func(cfg *config.Backend) client.HTTPRequestExecutor {
 		clientFactory := client.NewHTTPClient
-		if _, ok := cfg.ExtraConfig[oauth2client.Namespace]; ok {
+		if _, ok := cfg.ExtraConfig[rediscache.Namespace]; ok {
+			clientFactory = rediscache.NewHTTPClient(cfg)
+		} else if _, ok := cfg.ExtraConfig[oauth2client.Namespace]; ok {
 			clientFactory = oauth2client.NewHTTPClient(cfg)
 		} else {
 			clientFactory = httpcache.NewHTTPClient(cfg, clientFactory)
